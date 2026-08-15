@@ -1,0 +1,27 @@
+# Optional: builds and runs the backend container against your locally
+# running `supabase start` stack — useful for smoke-testing the production
+# Docker image before deploying. For day-to-day development, `npm run
+# dev --workspace backend` (against `supabase start`) is faster to iterate
+# on and is what backend/.env.example is written for.
+#
+# `host.docker.internal` is how a container reaches services running on
+# the host under Docker Desktop (Windows/Mac) — not needed on the host
+# workflow above, only here where the backend itself runs inside Docker.
+services:
+  api:
+    build:
+      context: ./backend
+    ports:
+      - "5001:5001"
+    environment:
+      NODE_ENV: development
+      PORT: 5001
+      DATABASE_URL: postgres://postgres:postgres@host.docker.internal:54322/postgres
+      SUPABASE_URL: http://host.docker.internal:54321
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?set this from \`supabase start\`'s output}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      CORS_ORIGINS: http://localhost:5173
+      LOG_LEVEL: info
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

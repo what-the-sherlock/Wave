@@ -1,13 +1,26 @@
 {
-  "name": "chai",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "katta",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Katta — team collaboration platform",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
-    "build":"npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend ",
-    "start":"npm run start --prefix backend"
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace backend && npm run build --workspace frontend",
+    "start": "npm run start --workspace backend",
+    "lint": "npm run lint --workspace backend && npm run lint --workspace frontend",
+    "typecheck": "npm run typecheck --workspace backend && npm run typecheck --workspace frontend",
+    "test": "npm run test --workspace backend",
+    "test:coverage": "npm run test:coverage --workspace backend",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:push": "supabase db push --local",
+    "db:reset": "supabase db reset",
+    "db:diff": "supabase db diff"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": ""
+  "license": "ISC"
 }

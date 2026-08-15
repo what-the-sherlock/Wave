@@ -1,0 +1,9 @@
+-- Local development seed data.
+--
+-- Phase 1 has no workspace/channel concept yet, so there is nothing to seed
+-- beyond what `supabase start` already provides (an empty auth.users table).
+-- Create a user via POST /api/v1/auth/signup against the running backend to
+-- get a profile row (the handle_new_user trigger populates it automatically).
+--
+-- This file will grow in Phase 2 to include a demo workspace, channels, and
+-- messages so a fresh clone has something to look at within minutes.

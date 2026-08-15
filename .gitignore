@@ -24,3 +24,14 @@ dist-ssr
 *.sw?
 
 .env
+.env.*
+!.env.example
+
+# Supabase CLI local state
+supabase/.branches
+supabase/.temp
+supabase/.env
+
+# Coverage
+coverage
+*.tsbuildinfo

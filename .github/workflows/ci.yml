@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend (lint, typecheck, migrate, test, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --workspace backend
+
+      - name: Typecheck
+        run: npm run typecheck --workspace backend
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase (Postgres + Auth + Storage)
+        run: supabase start --ignore-health-check
+
+      - name: Apply migrations
+        run: supabase db push --local
+
+      - name: Export local Supabase connection details
+        # Deliberately does NOT set SUPABASE_JWT_SECRET: this CLI version
+        # signs tokens with an asymmetric key by default, so verification
+        # needs the remote-JWKS path, not the legacy HS256 secret — setting
+        # it would make every request fail with TOKEN_INVALID. See
+        # backend/.env.example and src/auth/jwt.ts.
+        run: |
+          status=$(supabase status -o json)
+          echo "DATABASE_URL=$(echo "$status" | jq -r '.DB_URL')" >> "$GITHUB_ENV"
+          echo "SUPABASE_URL=$(echo "$status" | jq -r '.API_URL')" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$(echo "$status" | jq -r '.ANON_KEY')" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(echo "$status" | jq -r '.SERVICE_ROLE_KEY')" >> "$GITHUB_ENV"
+
+      - name: Test (unit + integration against the live local stack)
+        run: npm run test --workspace backend
+        env:
+          NODE_ENV: test
+          CORS_ORIGINS: http://localhost:5173
+
+      - name: Build
+        run: npm run build --workspace backend
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop
+
+  frontend:
+    name: Frontend (lint, typecheck, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --workspace frontend
+
+      - name: Typecheck
+        run: npm run typecheck --workspace frontend
+
+      - name: Build
+        run: npm run build --workspace frontend
+        env:
+          # A placeholder is enough — the build only needs `import.meta.env.MODE`,
+          # not a reachable backend.
+          NODE_ENV: production
