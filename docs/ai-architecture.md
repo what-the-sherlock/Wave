@@ -1,4 +1,4 @@
-# Katta — AI Architecture
+# wave — AI Architecture
 
 > **Prerequisite: Phase 2 (workspaces + RLS policies) and Phase 3 (channels) complete, with the
 > isolation suite green.** RAG over a system without working authorization is a leak generator.

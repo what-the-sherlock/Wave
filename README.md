@@ -1,10 +1,11 @@
-# Katta
+# wave
 
 A team collaboration platform. See [`docs/`](docs/) for the full architecture, security model,
 and phased roadmap — this file is just "how do I run it."
 
-**Status:** Phase 1 (Foundation) — auth, profiles, and an authenticated real-time gateway.
-Workspaces, channels, and messaging arrive in later phases (see
+**Status:** Phases 1–6 implemented — auth, workspaces/RLS, channels/messaging, production
+real-time (presence, typing, reconnection), notifications/background jobs, and search/file
+attachments. AI, observability, and hardening are next (see
 [docs/implementation-roadmap.md](docs/implementation-roadmap.md)).
 
 ## Stack
@@ -41,6 +42,11 @@ npm run dev:frontend   # http://localhost:5173
 ```
 
 Open http://localhost:5173, sign up, and you're in.
+
+Messaging works with no further setup. To see notifications fan out (mentions, DMs, thread
+replies) and file-attachment processing (thumbnails, MIME verification), set `RUN_WORKERS=true`
+in `backend/.env` — it starts pg-boss and its job handlers in the same process. Leave it `false`
+for a plain HTTP-only dev loop.
 
 ## Common tasks
 

@@ -1,4 +1,4 @@
-# Katta — Real-Time Architecture
+# wave — Real-Time Architecture
 
 > **Socket.IO, not Supabase Realtime** — decision and reasoning in
 > [target-architecture.md](./target-architecture.md) §4.

@@ -1,7 +1,7 @@
-# Katta local Supabase configuration. Used by `supabase start` for local development
+# wave local Supabase configuration. Used by `supabase start` for local development
 # and by CI to spin up an ephemeral stack for integration tests.
 
-project_id = "katta"
+project_id = "wave"
 
 [api]
 enabled = true

@@ -1,4 +1,4 @@
-# Katta — Database Design (Supabase / Postgres)
+# wave — Database Design (Supabase / Postgres)
 
 > Decision and trade-offs: [target-architecture.md](./target-architecture.md) §3.
 > **Supabase Postgres as primary — with RLS, `tsvector` FTS, `pgvector`, and Storage.

@@ -1,26 +1,48 @@
-import { Link } from "react-router-dom";
-import { MessageSquare } from "lucide-react";
+import { useEffect } from "react";
+import { Link, Navigate } from "react-router-dom";
+import { Loader } from "lucide-react";
+import { WaveMark } from "../components/WaveLogo";
 import { useProfile } from "../hooks/useProfile";
+import { useWorkspaces } from "../hooks/useWorkspaces";
+import { useWorkspaceStore } from "../store/useWorkspaceStore";
 
 /**
- * Phase 1 has no workspaces, channels, or messages yet — those arrive in
- * Phases 2–3. Wiring this page back up to the old Sidebar/ChatContainer
- * would mean rendering a UI that immediately 404s against endpoints that
- * no longer exist, which is worse than an honest placeholder. Those
- * components (docs/target-architecture.md §11) are kept in the repo,
- * untouched and dormant, and get reconnected here once channels exist.
+ * Redirects into a workspace once one exists — the workspace-scoped chat UI
+ * lives at `/w/:slug` (`WorkspaceHomePage`, and channels once Phase 3
+ * lands). With zero workspaces, this stays the account-setup landing page.
  */
 const HomePage = () => {
   const { data: profile } = useProfile();
+  const { data: workspaces, isLoading } = useWorkspaces();
+  const { lastWorkspaceSlug, setLastWorkspaceSlug } = useWorkspaceStore();
+
+  const target =
+    workspaces?.find((w) => w.slug === lastWorkspaceSlug)?.slug ?? workspaces?.[0]?.slug;
+
+  useEffect(() => {
+    if (target) {
+      setLastWorkspaceSlug(target);
+    }
+  }, [target, setLastWorkspaceSlug]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader className="size-10 animate-spin" />
+      </div>
+    );
+  }
+
+  if (target) {
+    return <Navigate to={`/w/${target}`} replace />;
+  }
 
   return (
     <div className="h-screen bg-base-200">
       <div className="flex items-center justify-center pt-20 px-4">
         <div className="bg-base-100 rounded-lg shadow-cl w-full max-w-2xl p-10 text-center space-y-6">
           <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <MessageSquare className="w-8 h-8 text-primary" />
-            </div>
+            <WaveMark className="h-16 w-auto text-primary" />
           </div>
 
           <div>
@@ -28,10 +50,14 @@ const HomePage = () => {
               Welcome{profile?.fullName ? `, ${profile.fullName}` : ""}!
             </h1>
             <p className="text-base-content/60 mt-2">
-              You&apos;re signed in and your account is set up. Workspaces, channels, and
-              messaging are on the way in the next phases of the rebuild.
+              You&apos;re signed in. Create a workspace to get started, or wait for a teammate to
+              invite you to theirs.
             </p>
           </div>
+
+          <Link to="/w/new" className="btn btn-primary">
+            Create a workspace
+          </Link>
 
           <div className="text-sm text-base-content/50 border-t border-base-300 pt-4">
             In the meantime, check out{" "}

@@ -8,7 +8,17 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      keyframes: {
+        "wave-shimmer": {
+          "0%, 100%": { opacity: "0.35" },
+          "50%": { opacity: "0.9" },
+        },
+      },
+      animation: {
+        "wave-shimmer": "wave-shimmer 3.2s ease-in-out infinite",
+      },
+    },
   },
   plugins: [daisyui],
   daisyui:{

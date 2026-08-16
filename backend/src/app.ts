@@ -10,6 +10,11 @@ import { globalApiLimiter } from "./middleware/rateLimit.js";
 import { errorMiddleware, notFoundMiddleware } from "./errors/errorMiddleware.js";
 import { authRouter } from "./auth/auth.routes.js";
 import { profileRouter } from "./profiles/profile.routes.js";
+import { workspaceRouter } from "./workspaces/workspace.routes.js";
+import { inviteRouter } from "./invites/invite.routes.js";
+import { channelRouter } from "./channels/channel.routes.js";
+import { notificationRouter } from "./notifications/notification.routes.js";
+import { uploadRouter } from "./uploads/upload.routes.js";
 import { healthRouter } from "./health/health.routes.js";
 
 /**
@@ -47,8 +52,14 @@ export function createApp(): Express {
         directives: {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'"],
-          imgSrc: ["'self'", "data:"],
-          connectSrc: ["'self'"],
+          // Phase 6: attachment thumbnails/images render from signed
+          // Supabase Storage URLs, not the app's own origin.
+          imgSrc: ["'self'", "data:", config.SUPABASE_URL],
+          // Phase 6: the frontend uploads directly to Supabase Storage's
+          // signed URL from the browser, bypassing the API entirely
+          // (docs/security-model.md §9) — CSP governs what the page's own
+          // JS may fetch, so this must be explicitly allowed.
+          connectSrc: ["'self'", config.SUPABASE_URL],
           frameAncestors: ["'none'"],
           objectSrc: ["'none'"],
         },
@@ -77,6 +88,11 @@ export function createApp(): Express {
   app.use("/api/v1", globalApiLimiter);
   app.use("/api/v1/auth", authRouter);
   app.use("/api/v1/profile", profileRouter);
+  app.use("/api/v1/workspaces", workspaceRouter);
+  app.use("/api/v1/invites", inviteRouter);
+  app.use("/api/v1/channels", channelRouter);
+  app.use("/api/v1/notifications", notificationRouter);
+  app.use("/api/v1/uploads", uploadRouter);
 
   app.use(notFoundMiddleware);
   app.use(errorMiddleware);

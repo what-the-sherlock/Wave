@@ -7,6 +7,13 @@ import { extractErrorMessage } from "../lib/utils";
 
 const SOCKET_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "/";
 
+/** Client-side half of docs/realtime-architecture.md §6's presence design —
+ * the server only knows a user is still around if it hears from them
+ * periodically. */
+const PRESENCE_HEARTBEAT_INTERVAL_MS = 25_000;
+
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+
 type SignUpInput = { fullName: string; email: string; password: string };
 type LoginInput = { email: string; password: string };
 
@@ -82,13 +89,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // httpOnly cookie the server verifies at the handshake. The original
     // app passed `query: { userId }`, which the server trusted verbatim
     // (D1) — this is the client-side half of that fix.
-    // docs/realtime-architecture.md §2.
-    const socket = io(SOCKET_URL, { withCredentials: true });
+    // docs/realtime-architecture.md §2. `reconnectionDelayMax` matches the
+    // "1s, 2s, 4s … cap 10s" backoff §7 describes.
+    const socket = io(SOCKET_URL, { withCredentials: true, reconnectionDelayMax: 10_000 });
+
+    socket.on("connect", () => {
+      heartbeatTimer ??= setInterval(() => {
+        socket.emit("presence.heartbeat");
+      }, PRESENCE_HEARTBEAT_INTERVAL_MS);
+    });
+    socket.on("disconnect", () => {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      }
+    });
+
     set({ socket });
   },
 
   disconnectSocket: () => {
     const socket = get().socket;
+    if (heartbeatTimer) {
+      clearInterval(heartbeatTimer);
+      heartbeatTimer = null;
+    }
     if (socket?.connected) {
       socket.disconnect();
     }

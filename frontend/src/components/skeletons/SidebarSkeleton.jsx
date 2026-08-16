@@ -1,38 +1,29 @@
-import { Users } from "lucide-react";
-
 const SidebarSkeleton = () => {
-  // Create 8 skeleton items
-  const skeletonContacts = Array(8).fill(null);
+  const skeletonChannels = Array(6).fill(null);
 
   return (
-    <aside
-      className="h-full w-20 lg:w-72 border-r border-base-300 
-    flex flex-col transition-all duration-200"
-    >
-      {/* Header */}
-      <div className="border-b border-base-300 w-full p-5">
-        <div className="flex items-center gap-2">
-          <Users className="w-6 h-6" />
-          <span className="font-medium hidden lg:block">Contacts</span>
+    <aside className="h-full w-64 shrink-0 border-r border-base-300 flex flex-col bg-base-100">
+      <div className="border-b border-base-300 p-4">
+        <div className="skeleton h-5 w-32" />
+      </div>
+
+      <div className="flex-1 overflow-y-auto py-2">
+        <div className="px-3 py-1">
+          <div className="skeleton h-3 w-16" />
+        </div>
+        <div className="px-1 py-1 space-y-1">
+          {skeletonChannels.map((_, idx) => (
+            <div key={idx} className="px-2 py-1.5 flex items-center gap-2">
+              <div className="skeleton size-3.5 rounded-full shrink-0" />
+              <div className="skeleton h-3 flex-1" />
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Skeleton Contacts */}
-      <div className="overflow-y-auto w-full py-3">
-        {skeletonContacts.map((_, idx) => (
-          <div key={idx} className="w-full p-3 flex items-center gap-3">
-            {/* Avatar skeleton */}
-            <div className="relative mx-auto lg:mx-0">
-              <div className="skeleton size-12 rounded-full" />
-            </div>
-
-            {/* User info skeleton - only visible on larger screens */}
-            <div className="hidden lg:block text-left min-w-0 flex-1">
-              <div className="skeleton h-4 w-32 mb-2" />
-              <div className="skeleton h-3 w-16" />
-            </div>
-          </div>
-        ))}
+      <div className="border-t border-base-300 p-2 flex gap-1">
+        <div className="skeleton h-8 flex-1 rounded-lg" />
+        <div className="skeleton h-8 flex-1 rounded-lg" />
       </div>
     </aside>
   );

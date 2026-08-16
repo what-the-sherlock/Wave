@@ -1,4 +1,4 @@
-# Katta — Implementation Roadmap
+# wave — Implementation Roadmap
 
 > **Greenfield rebuild on Supabase/Postgres, running entirely on free tiers.** No data to
 > migrate, no environment to preserve. The React frontend is carried forward; the backend is

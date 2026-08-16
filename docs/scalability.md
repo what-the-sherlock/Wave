@@ -1,4 +1,4 @@
-# Katta — Scalability & Observability
+# wave — Scalability & Observability
 
 > Greenfield on Supabase/Postgres. The original could not scale horizontally at all — presence
 > lived in a module-scoped object (D12) and fan-out targeted a socket id that existed in one

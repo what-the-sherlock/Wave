@@ -73,3 +73,21 @@ export const refreshIpLimiter = ipLimiter(60 * 60 * 1000, effectiveMax(30));
  * are a Phase 4+ refinement once Redis makes cross-instance limits
  * necessary — see docs/security-model.md §2. */
 export const globalApiLimiter = ipLimiter(60 * 1000, effectiveMax(300));
+
+/** Keyed by the authenticated user, falling back to IP for any (should be
+ * unreachable, since this only ever sits behind `authenticate`) request
+ * without claims yet. Phase 6's upload presign endpoint is the first
+ * consumer. */
+export function userLimiter(windowMs: number, max: number) {
+  return rateLimit({
+    windowMs,
+    max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => req.claims?.sub ?? req.ip ?? "unknown",
+    handler: () => rejectWithAppError(),
+  });
+}
+
+/** 20 presign requests / hour / user (docs/security-model.md §2). */
+export const presignLimiter = userLimiter(60 * 60 * 1000, effectiveMax(20));

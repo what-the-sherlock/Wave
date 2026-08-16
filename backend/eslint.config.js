@@ -71,10 +71,21 @@ export default tseslint.config(
     },
   },
   {
+    // Job handlers act on behalf of the system, not a single user's RLS
+    // scope — the same bounded, deliberate bypass docs/security-model.md §5
+    // describes (see db/rlsScope.ts's withServiceRoleScope). Some workers
+    // (attachment.process) also need the raw service_role key itself, to
+    // call Supabase Storage's REST API directly. The db-client restriction
+    // stays on: workers still go through repositories, never raw queries
+    // outside them.
+    files: ["src/queue/workers/**/*.ts"],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [restrictedDbImport] }],
+    },
+  },
+  {
     // Tests exercise both restricted modules directly to verify their
     // behaviour, so both restrictions lift here.
-    // NOTE: when Phase 5 adds `src/worker.ts`, it earns the same exemption
-    // for the privileged-config restriction (and only that one).
     files: ["test/**/*.ts"],
     rules: {
       "no-restricted-imports": "off",

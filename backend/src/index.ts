@@ -9,4 +9,8 @@ import "dotenv/config";
 
 import { startServer } from "./server.js";
 
-startServer();
+startServer().catch((err: unknown) => {
+  // eslint-disable-next-line no-console -- logger isn't guaranteed usable if boot failed before it initialized
+  console.error("failed to start server", err);
+  process.exit(1);
+});

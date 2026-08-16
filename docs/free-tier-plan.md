@@ -1,4 +1,4 @@
-# Katta — Free-Tier Plan
+# wave — Free-Tier Plan
 
 > **This project runs on free tiers end to end.** That is a design constraint, not a footnote:
 > it removes Redis from the early architecture, changes the queue technology, caps the AI context

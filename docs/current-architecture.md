@@ -1,4 +1,4 @@
-# Katta — Current Architecture Report
+# wave — Current Architecture Report
 
 > Status: as-built, from commit `c19a77e` (branch `master`).
 > Scope: every file in the repo was read. Nothing here is inferred from convention.
@@ -32,7 +32,7 @@ against a database that no longer exists.
 ## 1. Repository shape
 
 ```
-Katta/
+wave/
 ├── package.json              # root: name "chai", build/start orchestration only
 ├── backend/
 │   ├── .env                  # gitignored (verified) — 7 vars
@@ -313,7 +313,7 @@ Ordered by severity. Every item is tied to a specific line — nothing here is s
 trusts it. Any browser can open a console and run:
 
 ```js
-io("https://katta.example.com", { query: { userId: "<any user's ObjectId>" } })
+io("https://wave.example.com", { query: { userId: "<any user's ObjectId>" } })
 ```
 
 …and will then receive every `newMessage` addressed to that user in real time. ObjectIds are

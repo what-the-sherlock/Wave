@@ -1,4 +1,4 @@
-# Katta — Target Architecture
+# wave — Target Architecture
 
 > **Context: greenfield rebuild.** The original MongoDB database and deployment credentials are
 > gone. The React frontend is carried forward; the backend is rewritten in TypeScript against
@@ -223,7 +223,7 @@ no untrusted client ever holding a connection.
 ## 6. Auth: Supabase Auth behind an Express proxy
 
 The default Supabase SPA pattern stores the session in `localStorage`, which is readable by any
-XSS. The current Katta app uses `httpOnly` + `sameSite=strict` cookies — genuinely the best
+XSS. The current wave app uses `httpOnly` + `sameSite=strict` cookies — genuinely the best
 thing about the original codebase ([current-architecture.md](./current-architecture.md) §10),
 and the foundation the socket handshake auth depends on.
 

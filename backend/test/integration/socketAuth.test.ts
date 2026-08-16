@@ -49,7 +49,7 @@ describe.skipIf(!liveStackAvailable)("Socket.IO handshake auth (D1 regression)",
   const openSockets: ClientSocket[] = [];
 
   beforeAll(async () => {
-    handle = buildServer();
+    handle = await buildServer();
     await new Promise<void>((resolve) => handle.httpServer.listen(0, resolve));
     const { port } = handle.httpServer.address() as AddressInfo;
     baseUrl = `http://127.0.0.1:${port}`;

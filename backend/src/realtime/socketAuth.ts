@@ -6,7 +6,7 @@ export type AuthenticatedSocketData = {
   claims: AccessTokenClaims;
 };
 
-function parseCookieHeader(header: string | undefined): Record<string, string> {
+export function parseCookieHeader(header: string | undefined): Record<string, string> {
   const out: Record<string, string> = {};
   if (!header) return out;
   for (const part of header.split(";")) {
@@ -55,5 +55,29 @@ export async function socketAuthMiddleware(
     next();
   } catch {
     next(new Error("UNAUTHORIZED"));
+  }
+}
+
+/**
+ * Re-checks the same `sb-access` cookie captured at handshake time against
+ * the current clock, so a socket authenticated with a token that later
+ * expires does not stay connected indefinitely — `socket.ts` runs this on a
+ * 15-minute interval and disconnects on failure
+ * (docs/realtime-architecture.md §2). The handshake cookie header is fixed
+ * for the lifetime of the connection (Socket.IO does not re-read it), which
+ * is exactly what makes this a check of the original token's expiry rather
+ * than a way to pick up a refreshed one — the client is expected to
+ * reconnect after a refresh, same as at the initial handshake.
+ */
+export async function reverifySocket(socket: Socket): Promise<boolean> {
+  try {
+    const cookies = parseCookieHeader(socket.handshake.headers.cookie);
+    const token = cookies[ACCESS_COOKIE_NAME];
+    if (!token) return false;
+    const claims = await verifyAccessToken(token);
+    (socket.data as AuthenticatedSocketData).claims = claims;
+    return true;
+  } catch {
+    return false;
   }
 }

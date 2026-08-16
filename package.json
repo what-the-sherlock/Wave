@@ -1,8 +1,8 @@
 {
-  "name": "katta",
+  "name": "wave",
   "private": true,
   "version": "0.1.0",
-  "description": "Katta — team collaboration platform",
+  "description": "wave — team collaboration platform",
   "workspaces": [
     "backend",
     "frontend"

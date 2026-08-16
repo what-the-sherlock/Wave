@@ -1,4 +1,4 @@
-# Katta — Security Model
+# wave — Security Model
 
 > Greenfield build on Supabase/Postgres. Debt IDs (D1–D25) refer to
 > [current-architecture.md](./current-architecture.md) §9 — design lessons from the original

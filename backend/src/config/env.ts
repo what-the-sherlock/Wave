@@ -30,6 +30,37 @@ const schema = z.object({
   COOKIE_DOMAIN: z.string().optional(),
   CORS_ORIGINS: z.string().default("http://localhost:5173"),
 
+  // Invite emails are best-effort and fully optional (docs/implementation-
+  // roadmap.md Phase 2 — deliberate deviation from the literal roadmap
+  // text): the shareable invite link always works with neither of these
+  // set. When both are present, invite.service attempts to send via
+  // Resend's HTTP API and logs+ignores any failure. Mirrors the
+  // SUPABASE_JWT_SECRET optional-fallback pattern already in this file.
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
+
+  // Phase 5: notification emails are a distinct, separately-flagged concern
+  // from invite emails above — built and tested, shipped off by default
+  // because sending from a custom address needs a verified domain a
+  // personal project may not have (docs/free-tier-plan.md §6).
+  FEATURE_EMAIL: z.coerce.boolean().default(false),
+
+  // Phase 5: gates whether this process starts pg-boss and registers its
+  // job handlers. Same process by default (docs/free-tier-plan.md §5) —
+  // splitting workers into a second deployment later is a config change,
+  // not a code change.
+  RUN_WORKERS: z.coerce.boolean().default(false),
+
+  // pg-boss's polling/maintenance loop needs a session-pinned connection —
+  // it will not work through Supavisor's transaction-mode pooler. Falls
+  // back to DATABASE_URL, which is correct locally (no pooler running) but
+  // must be overridden to a direct/session-mode connection in production.
+  PGBOSS_DATABASE_URL: z.string().optional(),
+
+  // Phase 6: enforced both at the zod schema layer (upload.schemas.ts) and
+  // by the storage bucket's own file_size_limit (belt and suspenders).
+  MAX_UPLOAD_MB: z.coerce.number().int().positive().default(5),
+
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
     .default("info"),
@@ -44,6 +75,12 @@ export type AppConfig = Readonly<{
   SUPABASE_JWT_SECRET: string | undefined;
   COOKIE_DOMAIN: string | undefined;
   CORS_ORIGINS: readonly string[];
+  RESEND_API_KEY: string | undefined;
+  EMAIL_FROM: string | undefined;
+  FEATURE_EMAIL: boolean;
+  RUN_WORKERS: boolean;
+  PGBOSS_DATABASE_URL: string;
+  MAX_UPLOAD_MB: number;
   LOG_LEVEL: "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "silent";
   isProduction: boolean;
   isTest: boolean;
@@ -91,6 +128,16 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
     SUPABASE_JWT_SECRET: data.SUPABASE_JWT_SECRET,
     COOKIE_DOMAIN: data.COOKIE_DOMAIN,
     CORS_ORIGINS: Object.freeze(corsOrigins),
+    RESEND_API_KEY: data.RESEND_API_KEY,
+    EMAIL_FROM: data.EMAIL_FROM,
+    FEATURE_EMAIL: data.FEATURE_EMAIL,
+    RUN_WORKERS: data.RUN_WORKERS,
+    // Locally there is no pooler (DATABASE_URL already points at the direct
+    // connection on 54322), so the fallback is correct as-is. In production,
+    // PGBOSS_DATABASE_URL must be set explicitly to a direct/session-mode
+    // connection, not the Supavisor transaction-mode pooler.
+    PGBOSS_DATABASE_URL: data.PGBOSS_DATABASE_URL ?? data.DATABASE_URL,
+    MAX_UPLOAD_MB: data.MAX_UPLOAD_MB,
     LOG_LEVEL: data.LOG_LEVEL,
     isProduction: data.NODE_ENV === "production",
     isTest: data.NODE_ENV === "test",

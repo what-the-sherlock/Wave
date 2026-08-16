@@ -1,4 +1,4 @@
-# Katta — Product Requirements Document
+# wave — Product Requirements Document
 
 > **Version:** 1.0 · **Status:** Draft, pending approval · **Phase:** 0
 > Technical companion documents are indexed in [README.md](./README.md).
@@ -7,7 +7,7 @@
 
 ## 1. Summary
 
-Katta was a 1:1 direct-message chat application: users sign up, see every other user in the
+wave was a 1:1 direct-message chat application: users sign up, see every other user in the
 system, and exchange text and images. About 1,100 lines of code. **Its database and deployment
 credentials have been lost, so the project is restarting** — the React frontend is carried
 forward, the backend is rebuilt in TypeScript on Supabase/Postgres.

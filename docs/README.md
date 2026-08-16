@@ -1,4 +1,4 @@
-# Katta — Architecture & Planning Docs
+# wave — Architecture & Planning Docs
 
 Phase 0 deliverables: an audit of the original application and a plan for rebuilding it as a
 team collaboration platform. **No application code has been written yet.**
