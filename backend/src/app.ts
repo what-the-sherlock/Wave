@@ -1,3 +1,6 @@
+import path from "node:path";
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 import express, { type Express } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -16,6 +19,17 @@ import { channelRouter } from "./channels/channel.routes.js";
 import { notificationRouter } from "./notifications/notification.routes.js";
 import { uploadRouter } from "./uploads/upload.routes.js";
 import { healthRouter } from "./health/health.routes.js";
+
+// Sibling `frontend/dist` next to this repo's `backend/` — true both in the
+// local monorepo tree and in the deploy image, which preserves that layout
+// (docs/free-tier-plan.md §7: single-origin deploy, no separate static host).
+const frontendDistPath = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+  "frontend",
+  "dist",
+);
 
 /**
  * Composition root for the HTTP layer. Deliberately separate from
@@ -93,6 +107,21 @@ export function createApp(): Express {
   app.use("/api/v1/channels", channelRouter);
   app.use("/api/v1/notifications", notificationRouter);
   app.use("/api/v1/uploads", uploadRouter);
+
+  // Serves the built React app so frontend and API share one origin —
+  // required for the `sameSite: "strict"` auth cookie (auth/cookies.ts) and
+  // the Socket.IO client's default same-origin URL to work without CORS.
+  // Absent in local dev (no frontend build present), so this is a no-op there.
+  if (fs.existsSync(frontendDistPath)) {
+    app.use(express.static(frontendDistPath));
+    app.get("*", (req, res, next) => {
+      if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
+        next();
+        return;
+      }
+      res.sendFile(path.join(frontendDistPath, "index.html"));
+    });
+  }
 
   app.use(notFoundMiddleware);
   app.use(errorMiddleware);

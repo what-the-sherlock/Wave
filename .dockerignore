@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+**/dist
+**/dist-ssr
+.git
+.env
+.env.*
+!.env.example
+supabase/.branches
+supabase/.temp
+coverage
+*.log
