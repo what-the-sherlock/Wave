@@ -90,6 +90,21 @@ export function useMuteChannel(channelId: string) {
   });
 }
 
+export function useUpdateChannelAiExcluded(channelId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (aiExcluded: boolean) => {
+      const res = await axiosInstance.patch<Channel>(`/channels/${channelId}`, { aiExcluded });
+      return res.data;
+    },
+    onSuccess: (channel) => {
+      queryClient.setQueryData(["channel", channelId], channel);
+      toast.success(channel.aiExcluded ? "AI disabled for this channel" : "AI enabled for this channel");
+    },
+    onError: (error) => toast.error(extractErrorMessage(error)),
+  });
+}
+
 export function useChannelMembers(channelId: string | undefined) {
   return useQuery({
     queryKey: ["channel-members", channelId],

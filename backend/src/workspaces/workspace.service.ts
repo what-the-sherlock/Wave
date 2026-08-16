@@ -1,9 +1,10 @@
 import { randomBytes } from "node:crypto";
-import { withRlsScope } from "../db/rlsScope.js";
+import { withRlsScope, withServiceRoleScope } from "../db/rlsScope.js";
 import { ConflictError, NotFoundError } from "../errors/AppError.js";
 import * as workspaceRepo from "./workspace.repository.js";
 import * as memberRepo from "./member.repository.js";
 import { createGeneralChannelInTx } from "../channels/channel.service.js";
+import * as embeddingRepo from "../ai/embedding.repository.js";
 import type { Workspace, WorkspaceRole, WorkspaceSettings } from "./workspace.repository.js";
 
 export type { Workspace, WorkspaceRole, WorkspaceSettings } from "./workspace.repository.js";
@@ -127,21 +128,33 @@ export async function updateSettings(
   workspaceId: string,
   patch: WorkspaceSettingsPatch,
 ): Promise<Workspace> {
-  return withRlsScope({ userId }, async (tx) => {
+  const { updated, aiJustDisabled } = await withRlsScope({ userId }, async (tx) => {
     const existing = await workspaceRepo.findById(tx, workspaceId);
     if (!existing) {
       throw new NotFoundError("Workspace not found");
     }
-    const updated = await workspaceRepo.update(tx, workspaceId, {
+    const updatedRow = await workspaceRepo.update(tx, workspaceId, {
       ...(patch.name !== undefined ? { name: patch.name } : {}),
       ...(patch.iconUrl !== undefined ? { iconUrl: patch.iconUrl } : {}),
       ...(patch.settings !== undefined
         ? { settings: { ...existing.settings, ...patch.settings } }
         : {}),
     });
-    if (!updated) {
+    if (!updatedRow) {
       throw new NotFoundError("Workspace not found");
     }
-    return updated;
+    return { updated: updatedRow, aiJustDisabled: existing.settings.aiEnabled && !updatedRow.settings.aiEnabled };
   });
+
+  if (aiJustDisabled) {
+    // docs/ai-architecture.md §4 Rule 6: turning AI off deletes existing
+    // embeddings, not just stops indexing new ones. Run as a separate
+    // service_role step after the settings change has committed, rather
+    // than inside the same user-scoped transaction — keeps the privilege
+    // boundary the same shape as every other service_role use in this
+    // codebase (a distinct step, never mixed into a user's own RLS scope).
+    await withServiceRoleScope((tx) => embeddingRepo.deleteByWorkspace(tx, workspaceId));
+  }
+
+  return updated;
 }

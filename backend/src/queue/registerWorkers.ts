@@ -4,6 +4,8 @@ import { notificationFanoutHandler } from "./workers/notificationFanout.worker.j
 import { emailSendHandler } from "./workers/emailSend.worker.js";
 import { cleanupOrphansHandler } from "./workers/cleanupOrphans.worker.js";
 import { attachmentProcessHandler } from "./workers/attachmentProcess.worker.js";
+import { embeddingGenerateHandler } from "../ai/embedding.worker.js";
+import { aiProcessHandler } from "../ai/ai.worker.js";
 
 /**
  * Registers every job handler this process runs, behind `RUN_WORKERS=true`
@@ -17,4 +19,6 @@ export async function registerWorkers(params: { queue: Queue; presenceStore: Pre
   await queue.work("email.send", (data: { notificationId: string }) => emailSendHandler(data, presenceStore));
   await queue.work("cleanup.orphans", cleanupOrphansHandler);
   await queue.work("attachment.process", attachmentProcessHandler);
+  await queue.work("embedding.generate", embeddingGenerateHandler);
+  await queue.work("ai.process", aiProcessHandler);
 }

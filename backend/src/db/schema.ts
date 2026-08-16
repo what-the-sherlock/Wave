@@ -224,3 +224,56 @@ export const messageAttachments = pgTable("message_attachments", {
 
 export type MessageAttachment = typeof messageAttachments.$inferSelect;
 export type NewMessageAttachment = typeof messageAttachments.$inferInsert;
+
+/**
+ * Mirrors supabase/migrations/20260817010000_ai_embeddings.sql (Phase 7).
+ *
+ * `message_embeddings` is deliberately absent here, same reason
+ * `messages.search_vector` is: Drizzle has no `halfvec` column builder, so
+ * every read/write against it goes through raw SQL in
+ * ai/embedding.repository.ts and ai/retrieval.repository.ts. The SQL
+ * migration is the source of truth for it regardless.
+ */
+export const aiRequestKindEnum = pgEnum("ai_request_kind", [
+  "CHANNEL_SUMMARY",
+  "THREAD_SUMMARY",
+  "WORKSPACE_QA",
+]);
+export const aiRequestStatusEnum = pgEnum("ai_request_status", ["PENDING", "DONE", "FAILED"]);
+
+export const aiRequests = pgTable("ai_requests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull(),
+  channelId: uuid("channel_id"),
+  threadRootId: uuid("thread_root_id"),
+  userId: uuid("user_id").notNull(),
+  kind: aiRequestKindEnum("kind").notNull(),
+  status: aiRequestStatusEnum("status").notNull().default("PENDING"),
+  retrievedMessageIds: uuid("retrieved_message_ids").array().notNull().default([]),
+  error: text("error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+});
+
+export type AiRequest = typeof aiRequests.$inferSelect;
+export type NewAiRequest = typeof aiRequests.$inferInsert;
+
+export const aiSummaryCache = pgTable("ai_summary_cache", {
+  cacheKey: text("cache_key").primaryKey(),
+  kind: aiRequestKindEnum("kind").notNull(),
+  channelId: uuid("channel_id").notNull(),
+  threadRootId: uuid("thread_root_id"),
+  summary: jsonb("summary").notNull().$type<AiSummaryPayload>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type AiSummaryPayload = {
+  bullets: string[];
+  decisions: string[];
+  needsYourInput: string[];
+  citedMessageIds: string[];
+  truncated: boolean;
+};
+
+export type AiSummaryCacheRow = typeof aiSummaryCache.$inferSelect;
+export type NewAiSummaryCacheRow = typeof aiSummaryCache.$inferInsert;

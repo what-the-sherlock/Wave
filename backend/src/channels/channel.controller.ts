@@ -26,6 +26,7 @@ function toDto(
     lastMessageSeq: channel.lastMessageSeq,
     lastMessageAt: channel.lastMessageAt,
     memberCount: channel.memberCount,
+    aiExcluded: channel.aiExcluded,
     archivedAt: channel.archivedAt,
     createdAt: channel.createdAt,
     role: membership?.role ?? null,

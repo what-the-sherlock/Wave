@@ -66,6 +66,33 @@ const WorkspaceSettingsPage = () => {
         </div>
 
         {canManage && (
+          <div className="bg-base-100 rounded-lg shadow-cl p-6 space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold">AI features</h2>
+                <p className="text-sm text-base-content/60">
+                  Semantic search, catch-up summaries, thread summaries, and workspace Q&amp;A.
+                  Turning this off stops indexing and deletes existing message embeddings.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-primary shrink-0"
+                checked={workspace.settings.aiEnabled}
+                disabled={updateWorkspace.isPending}
+                onChange={(e) =>
+                  updateWorkspace.mutate({
+                    workspaceId: workspace.id,
+                    slug: workspace.slug,
+                    patch: { settings: { aiEnabled: e.target.checked } },
+                  })
+                }
+              />
+            </div>
+          </div>
+        )}
+
+        {canManage && (
           <div className="bg-base-100 rounded-lg shadow-cl p-6 space-y-3">
             <h2 className="text-lg font-bold">Invite people</h2>
             <p className="text-sm text-base-content/60">

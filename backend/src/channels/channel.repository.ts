@@ -83,7 +83,7 @@ export async function insert(tx: Tx, data: NewChannel): Promise<Channel> {
   return row;
 }
 
-export type ChannelPatch = Partial<Pick<Channel, "topic" | "description">>;
+export type ChannelPatch = Partial<Pick<Channel, "topic" | "description" | "aiExcluded">>;
 
 export async function update(
   tx: Tx,

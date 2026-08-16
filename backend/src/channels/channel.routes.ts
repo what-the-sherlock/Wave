@@ -4,6 +4,7 @@ import { resolveChannel, requireChannelMembership } from "../middleware/resolveC
 import { validate } from "../middleware/validate.js";
 import * as channelController from "./channel.controller.js";
 import * as messageController from "./message.controller.js";
+import * as aiController from "../ai/ai.controller.js";
 import {
   inviteToChannelSchema,
   listMessagesQuerySchema,
@@ -121,4 +122,15 @@ channelRouter.post(
   requireChannelMembership,
   validate({ body: markReadSchema }),
   messageController.markRead,
+);
+
+// Phase 7: catch-up and thread summaries. Eligibility (aiEnabled,
+// ai_excluded, unread/reply-count thresholds) is enforced server-side in
+// ai.service.ts, not just hidden client-side.
+channelRouter.post("/:channelId/ai/catchup", resolveChannel, requireChannelMembership, aiController.catchup);
+channelRouter.post(
+  "/:channelId/messages/:messageId/ai/summarize",
+  resolveChannel,
+  requireChannelMembership,
+  aiController.summarizeThread,
 );

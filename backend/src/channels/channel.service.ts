@@ -1,7 +1,8 @@
-import { withRlsScope, type Tx } from "../db/rlsScope.js";
+import { withRlsScope, withServiceRoleScope, type Tx } from "../db/rlsScope.js";
 import { ConflictError, ForbiddenError, NotFoundError } from "../errors/AppError.js";
 import { getRealtimeEmitter } from "../realtime/emitter.js";
 import * as channelRepo from "./channel.repository.js";
+import * as embeddingRepo from "../ai/embedding.repository.js";
 import * as channelMemberRepo from "./channelMember.repository.js";
 import * as workspaceMemberRepo from "../workspaces/member.repository.js";
 import * as profileRepo from "../profiles/profile.repository.js";
@@ -296,14 +297,14 @@ export async function archiveChannel(actorUserId: string, channelId: string): Pr
   getRealtimeEmitter().toWorkspace(workspaceId, "channel.archived", { channelId });
 }
 
-export type ChannelSettingsPatch = { topic?: string; description?: string };
+export type ChannelSettingsPatch = { topic?: string; description?: string; aiExcluded?: boolean };
 
 export async function updateChannelSettings(
   actorUserId: string,
   channelId: string,
   patch: ChannelSettingsPatch,
 ): Promise<Channel> {
-  return withRlsScope({ userId: actorUserId }, async (tx) => {
+  const updated = await withRlsScope({ userId: actorUserId }, async (tx) => {
     const channel = await channelRepo.findById(tx, channelId);
     if (!channel) {
       throw new NotFoundError("Channel not found");
@@ -313,12 +314,22 @@ export async function updateChannelSettings(
     if (!canManageChannel(workspaceRole, actorMembership?.role ?? null)) {
       throw new ForbiddenError("Only a channel or workspace admin may update this channel");
     }
-    const updated = await channelRepo.update(tx, channelId, patch);
-    if (!updated) {
+    const row = await channelRepo.update(tx, channelId, patch);
+    if (!row) {
       throw new NotFoundError("Channel not found");
     }
-    return updated;
+    return row;
   });
+
+  if (patch.aiExcluded === true) {
+    // docs/ai-architecture.md §4 Rule 6, applied at channel granularity —
+    // see embedding.repository.ts's deleteByChannel. A separate
+    // service_role step after commit, same shape as workspace.service.ts's
+    // aiEnabled=false handling.
+    await withServiceRoleScope((tx) => embeddingRepo.deleteByChannel(tx, channelId));
+  }
+
+  return updated;
 }
 
 function dmKeyFor(userA: string, userB: string): string {

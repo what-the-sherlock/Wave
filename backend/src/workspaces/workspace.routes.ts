@@ -9,7 +9,9 @@ import * as inviteController from "./invite.controller.js";
 import * as channelController from "../channels/channel.controller.js";
 import * as searchController from "../search/search.controller.js";
 import * as queueStatusController from "../queue/queueStatus.controller.js";
+import * as aiController from "../ai/ai.controller.js";
 import { searchQuerySchema } from "../search/search.schemas.js";
+import { askQuestionSchema } from "../ai/ai.schemas.js";
 import {
   createWorkspaceSchema,
   updateWorkspaceSchema,
@@ -128,6 +130,17 @@ workspaceRouter.get(
   authorize("workspace:read"),
   validate({ query: searchQuerySchema }),
   searchController.search,
+);
+
+// Phase 7: workspace Q&A. Retrieval is RLS-scoped inside ai.service.ts —
+// this route contributes nothing beyond authn/authz/validation, per
+// docs/ai-architecture.md §4 Rule 1.
+workspaceRouter.post(
+  "/:workspaceId/ai/ask",
+  resolveWorkspace,
+  authorize("ai:query"),
+  validate({ body: askQuestionSchema }),
+  aiController.ask,
 );
 
 // Phase 5: minimal admin-only queue-status endpoint. Reuses the existing

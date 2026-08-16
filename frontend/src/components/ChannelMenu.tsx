@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, BellOff, MoreVertical, Users } from "lucide-react";
-import { useMuteChannel } from "../hooks/useChannels";
+import { Bell, BellOff, MoreVertical, Sparkles, Users } from "lucide-react";
+import { useMuteChannel, useUpdateChannelAiExcluded } from "../hooks/useChannels";
 
 const MUTE_OPTIONS: { label: string; hours: number | null }[] = [
   { label: "Mute for 1 hour", hours: 1 },
@@ -16,15 +16,22 @@ export default function ChannelMenu({
   channelId,
   mutedUntil,
   onViewMembers,
+  canManage = false,
+  aiExcluded = false,
 }: {
   channelId: string;
   mutedUntil: string | null | undefined;
   /** Omitted for DMs, which have no separate member roster worth viewing. */
   onViewMembers?: () => void;
+  /** Channel or workspace admin — gates the AI toggle, mirrors the server's
+   * canManageChannel check (channel.service.ts). */
+  canManage?: boolean;
+  aiExcluded?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const muteChannel = useMuteChannel(channelId);
+  const updateAiExcluded = useUpdateChannelAiExcluded(channelId);
   const muted = isMuted(mutedUntil ?? null);
 
   useEffect(() => {
@@ -89,6 +96,19 @@ export default function ChannelMenu({
                 </button>
               </li>
             ))
+          )}
+          {canManage && (
+            <li>
+              <button
+                type="button"
+                onClick={() => {
+                  updateAiExcluded.mutate(!aiExcluded);
+                  setOpen(false);
+                }}
+              >
+                <Sparkles className="size-4" /> {aiExcluded ? "Enable AI for this channel" : "Exclude from AI"}
+              </button>
+            </li>
           )}
         </ul>
       )}

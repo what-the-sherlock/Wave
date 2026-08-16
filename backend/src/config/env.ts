@@ -61,6 +61,22 @@ const schema = z.object({
   // by the storage bucket's own file_size_limit (belt and suspenders).
   MAX_UPLOAD_MB: z.coerce.number().int().positive().default(5),
 
+  // Phase 7: optional, same pattern as RESEND_API_KEY — every AI feature
+  // degrades gracefully (503, never a 500 or a crash) when it's unset,
+  // rather than failing boot, since AI is a per-workspace opt-in leaf
+  // dependency (docs/ai-architecture.md §1). Verified against Groq's
+  // current model list (2026-08): llama-3.3-70b-versatile was deprecated
+  // for free/developer tier on 2026-06-17; openai/gpt-oss-120b is the
+  // current default (30 RPM / 1K RPD / 8K TPM free tier — confirms the
+  // ~6k input token budget in docs/free-tier-plan.md §4).
+  GROQ_API_KEY: z.string().optional(),
+  GROQ_MODEL: z.string().default("openai/gpt-oss-120b"),
+  AI_DAILY_REQUEST_CAP: z.coerce.number().int().positive().default(500),
+  // Xenova/bge-small-en-v1.5 → 384 dims, matching message_embeddings'
+  // halfvec(384) column (docs/database-design.md §11). Changing this
+  // requires a re-embedding backfill, not just a config flip.
+  EMBEDDING_MODEL: z.string().default("Xenova/bge-small-en-v1.5"),
+
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
     .default("info"),
@@ -81,6 +97,10 @@ export type AppConfig = Readonly<{
   RUN_WORKERS: boolean;
   PGBOSS_DATABASE_URL: string;
   MAX_UPLOAD_MB: number;
+  GROQ_API_KEY: string | undefined;
+  GROQ_MODEL: string;
+  AI_DAILY_REQUEST_CAP: number;
+  EMBEDDING_MODEL: string;
   LOG_LEVEL: "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "silent";
   isProduction: boolean;
   isTest: boolean;
@@ -138,6 +158,10 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
     // connection, not the Supavisor transaction-mode pooler.
     PGBOSS_DATABASE_URL: data.PGBOSS_DATABASE_URL ?? data.DATABASE_URL,
     MAX_UPLOAD_MB: data.MAX_UPLOAD_MB,
+    GROQ_API_KEY: data.GROQ_API_KEY,
+    GROQ_MODEL: data.GROQ_MODEL,
+    AI_DAILY_REQUEST_CAP: data.AI_DAILY_REQUEST_CAP,
+    EMBEDDING_MODEL: data.EMBEDDING_MODEL,
     LOG_LEVEL: data.LOG_LEVEL,
     isProduction: data.NODE_ENV === "production",
     isTest: data.NODE_ENV === "test",

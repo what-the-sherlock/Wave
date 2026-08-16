@@ -14,6 +14,7 @@ export type Channel = {
   lastMessageSeq: number;
   lastMessageAt: string | null;
   memberCount: number;
+  aiExcluded: boolean;
   archivedAt: string | null;
   createdAt: string;
   role: ChannelMemberRole | null;

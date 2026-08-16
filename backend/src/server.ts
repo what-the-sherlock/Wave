@@ -11,6 +11,8 @@ import { setQueue, type Queue } from "./queue/index.js";
 import { noopQueue } from "./queue/noopQueue.js";
 import { PgBossQueue } from "./queue/pgBossQueue.js";
 import { registerWorkers } from "./queue/registerWorkers.js";
+import { setLlmProvider } from "./ai/llmProvider.js";
+import { createGroqProviderFromConfig } from "./ai/groqProvider.js";
 
 export type ServerHandle = {
   app: ReturnType<typeof createApp>;
@@ -34,6 +36,16 @@ export async function buildServer(): Promise<ServerHandle> {
   const httpServer = createServer(app);
   const { io, presenceStore, stopSweeper } = createSocketServer(httpServer);
   setRealtimeEmitter(createSocketIoRealtimeEmitter(io));
+
+  // The embedder (embedder.ts) needs no wiring here — it's self-contained
+  // and lazy-loads on first use regardless of GROQ_API_KEY. Only the LLM
+  // provider is conditional: every AI feature degrades to a 503 via the
+  // default `unavailableLlmProvider` when no key is configured, rather than
+  // failing boot (docs/ai-architecture.md — AI is a leaf dependency).
+  const groqProvider = createGroqProviderFromConfig();
+  if (groqProvider) {
+    setLlmProvider(groqProvider);
+  }
 
   const queue: Queue = config.RUN_WORKERS ? new PgBossQueue() : noopQueue;
   setQueue(queue);

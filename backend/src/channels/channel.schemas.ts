@@ -20,6 +20,11 @@ export const updateChannelSchema = z
   .object({
     topic: z.string().trim().max(250).optional(),
     description: z.string().trim().max(1000).optional(),
+    // Phase 7: excludes a sensitive channel (#hr, #legal) from AI indexing
+    // and querying (docs/ai-architecture.md §4 Rule 6). Gated the same way
+    // as topic/description — only a channel or workspace admin, enforced in
+    // channel.service.ts's updateChannelSettings.
+    aiExcluded: z.boolean().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided",

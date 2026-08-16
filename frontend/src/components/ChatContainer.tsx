@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ChevronDown, Hash, Loader2, Lock, Users } from "lucide-react";
+import { ChevronDown, Hash, Loader2, Lock, Sparkles, Users } from "lucide-react";
 import { formatDateSeparator } from "../lib/utils";
 import { useSession } from "../hooks/useSession";
 import { useChannel, useChannelMembers, useJoinChannel } from "../hooks/useChannels";
@@ -8,14 +8,20 @@ import { useMarkRead, useMessages, useMessageSocketEvents } from "../hooks/useMe
 import { useTypingIndicator } from "../hooks/useTyping";
 import { useConnectionStatus } from "../hooks/useConnectionStatus";
 import { usePresence } from "../hooks/usePresence";
+import { useCatchupSummary } from "../hooks/useAi";
 import { useWorkspaceContext } from "./RequireWorkspace";
 import MessageItem from "./MessageItem";
 import MessageInput from "./MessageInput";
 import ThreadPanel from "./ThreadPanel";
 import ChannelMembersPanel from "./ChannelMembersPanel";
 import ChannelMenu from "./ChannelMenu";
+import CatchupModal from "./CatchupModal";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 import type { Message } from "../types/channel";
+
+/** "Under 10 unread → don't offer it; reading is faster"
+ * (docs/ai-architecture.md §3.1). */
+const MIN_UNREAD_FOR_CATCHUP = 10;
 
 /** How long to hold off after the latest-seq or scroll position changes
  * before actually calling mark-read — collapses a burst of new messages or
@@ -76,6 +82,8 @@ export default function ChatContainer({
   const markRead = useMarkRead(channelId);
   const [threadRootId, setThreadRootId] = useState<string | null>(null);
   const [showMembersPanel, setShowMembersPanel] = useState(false);
+  const [showCatchup, setShowCatchup] = useState(false);
+  const catchupSummary = useCatchupSummary(channelId);
 
   useMessageSocketEvents(hasAccess ? channelId : undefined);
 
@@ -346,11 +354,30 @@ export default function ChatContainer({
           <Users className="size-3.5" /> {channel?.memberCount ?? ""}
         </button>
       )}
+      {hasAccess &&
+        !isDm &&
+        workspace.settings.aiEnabled &&
+        !channel?.aiExcluded &&
+        unreadBelow >= MIN_UNREAD_FOR_CATCHUP && (
+          <button
+            type="button"
+            className="btn btn-xs btn-ghost gap-1"
+            onClick={() => {
+              setShowCatchup(true);
+              void catchupSummary.request();
+            }}
+            title="Summarize what you missed"
+          >
+            <Sparkles className="size-3.5" /> Catch me up
+          </button>
+        )}
       {hasAccess && (
         <ChannelMenu
           channelId={channelId}
           mutedUntil={channel?.mutedUntil}
           onViewMembers={isDm ? undefined : toggleMembersPanel}
+          canManage={canModerate || channel?.role === "ADMIN"}
+          aiExcluded={channel?.aiExcluded ?? false}
         />
       )}
     </div>
@@ -478,6 +505,7 @@ export default function ChatContainer({
         <ThreadPanel
           channelId={channelId}
           threadRootId={threadRootMessage.id}
+          replyCount={threadRootMessage.replyCount}
           workspaceRole={workspace.role}
           onClose={() => setThreadRootId(null)}
         />
@@ -486,6 +514,8 @@ export default function ChatContainer({
       {showMembersPanel && !threadRootMessage && (
         <ChannelMembersPanel channelId={channelId} onClose={() => setShowMembersPanel(false)} />
       )}
+
+      {showCatchup && <CatchupModal summary={catchupSummary} onClose={() => setShowCatchup(false)} />}
     </div>
   );
 }

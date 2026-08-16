@@ -83,6 +83,18 @@ export async function sendMessage(
     // it rolls back. See queue/pgBossQueue.ts's sendTx.
     await getQueue().sendTx(tx, "notification.fanout", { messageId: row.id });
 
+    // Phase 7: debounced (30s) via singletonKey — a burst of messages in
+    // the same channel collapses into one pending job rather than one per
+    // message. Eligibility (DM/ai_excluded/workspace aiEnabled) is checked
+    // in the worker itself, not here, so this stays a one-line addition to
+    // a hot, well-tested path (docs/ai-architecture.md §2).
+    await getQueue().sendTx(
+      tx,
+      "embedding.generate",
+      { channelId },
+      { singletonKey: channelId, startAfterSeconds: 30 },
+    );
+
     return row;
   });
 
