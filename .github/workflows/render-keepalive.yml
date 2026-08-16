@@ -1,0 +1,32 @@
+name: Render keep-alive
+
+# Render's free tier spins a service down after ~15 minutes with no
+# incoming requests, costing the next visitor a ~50s cold start. A ping
+# every 10 minutes keeps it inside that window so it never fully spins
+# down. Render's Feb 2026 change (WebSocket messages count as activity
+# too) covers the rest: once someone is connected, Wave's own 25s
+# presence heartbeat keeps the service warm on its own.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render health endpoint
+        run: |
+          if [ -z "$RENDER_URL" ]; then
+            echo "RENDER_URL secret not set yet — skipping." >&2
+            exit 0
+          fi
+          status=$(curl -s -o /dev/null -w "%{http_code}" "$RENDER_URL/health")
+          echo "Response status: $status"
+          if [ "$status" -ge 500 ]; then
+            echo "Wave app appears to be down." >&2
+            exit 1
+          fi
+        env:
+          RENDER_URL: ${{ secrets.RENDER_URL }}
