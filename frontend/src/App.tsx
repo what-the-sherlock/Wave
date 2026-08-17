@@ -85,7 +85,7 @@ function App() {
 
   return (
     <div data-theme={theme}>
-      <Navbar />
+      <Navbar onOpenSearch={() => setSearchOpen(true)} />
 
       <Routes>
         <Route

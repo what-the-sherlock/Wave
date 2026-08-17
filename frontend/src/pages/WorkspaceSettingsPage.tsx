@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import { useWorkspaceContext } from "../components/RequireWorkspace";
-import { useLeaveWorkspace, useUpdateWorkspace } from "../hooks/useWorkspaces";
+import { useLeaveWorkspace, useUpdateAiEnabled, useUpdateWorkspace } from "../hooks/useWorkspaces";
 import InviteModal from "../components/InviteModal";
 
 const WorkspaceSettingsPage = () => {
@@ -12,6 +12,7 @@ const WorkspaceSettingsPage = () => {
 
   const [name, setName] = useState(workspace.name);
   const updateWorkspace = useUpdateWorkspace();
+  const updateAiEnabled = useUpdateAiEnabled();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const leaveWorkspace = useLeaveWorkspace(workspace.id);
 
@@ -65,32 +66,30 @@ const WorkspaceSettingsPage = () => {
           </form>
         </div>
 
-        {canManage && (
-          <div className="bg-base-100 rounded-lg shadow-cl p-6 space-y-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold">AI features</h2>
-                <p className="text-sm text-base-content/60">
-                  Semantic search, catch-up summaries, thread summaries, and workspace Q&amp;A.
-                  Turning this off stops indexing and deletes existing message embeddings.
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                className="toggle toggle-primary shrink-0"
-                checked={workspace.settings.aiEnabled}
-                disabled={updateWorkspace.isPending}
-                onChange={(e) =>
-                  updateWorkspace.mutate({
-                    workspaceId: workspace.id,
-                    slug: workspace.slug,
-                    patch: { settings: { aiEnabled: e.target.checked } },
-                  })
-                }
-              />
+        <div className="bg-base-100 rounded-lg shadow-cl p-6 space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold">AI features</h2>
+              <p className="text-sm text-base-content/60">
+                Semantic search, catch-up summaries, thread summaries, and workspace Q&amp;A.
+                Turning this off stops indexing and deletes existing message embeddings.
+              </p>
             </div>
+            <input
+              type="checkbox"
+              className="toggle toggle-primary shrink-0"
+              checked={workspace.settings.aiEnabled}
+              disabled={updateAiEnabled.isPending}
+              onChange={(e) =>
+                updateAiEnabled.mutate({
+                  workspaceId: workspace.id,
+                  slug: workspace.slug,
+                  aiEnabled: e.target.checked,
+                })
+              }
+            />
           </div>
-        )}
+        </div>
 
         {canManage && (
           <div className="bg-base-100 rounded-lg shadow-cl p-6 space-y-3">

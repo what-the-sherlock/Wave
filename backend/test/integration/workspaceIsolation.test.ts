@@ -18,6 +18,7 @@ const liveStackAvailable = dbUp && authUp;
  * route wiring itself. */
 const BODIES_BY_PATH: Record<string, Record<string, unknown>> = {
   "/:workspaceId": { name: "Adversarial Rename Attempt" },
+  "/:workspaceId/ai-settings": { aiEnabled: false },
   "/:workspaceId/members/:userId": { role: "MEMBER" },
   "/:workspaceId/invites": { role: "MEMBER" },
 };

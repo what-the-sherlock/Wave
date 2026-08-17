@@ -32,6 +32,13 @@ describe("hasPermission", () => {
     expect(hasPermission("MEMBER", "workspace:update")).toBe(false);
   });
 
+  it("MEMBER can query and toggle AI, and ADMIN/OWNER inherit both via ai:*", () => {
+    expect(hasPermission("MEMBER", "ai:query")).toBe(true);
+    expect(hasPermission("MEMBER", "ai:toggle")).toBe(true);
+    expect(hasPermission("ADMIN", "ai:toggle")).toBe(true);
+    expect(hasPermission("OWNER", "ai:toggle")).toBe(true);
+  });
+
   it("wildcard matching only matches on the exact prefix, not an arbitrary substring", () => {
     // "member:*" must not accidentally match "members:invite" or similar
     // near-miss strings — only permission:sub-permission continuations.

@@ -34,6 +34,7 @@ export const PERMISSIONS: Readonly<Record<WorkspaceRole, readonly string[]>> = O
     "message:update:own",
     "message:delete:own",
     "ai:query",
+    "ai:toggle",
   ],
 });
 

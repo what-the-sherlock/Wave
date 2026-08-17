@@ -26,6 +26,13 @@ export const updateWorkspaceSchema = z
   });
 export type UpdateWorkspaceBody = z.infer<typeof updateWorkspaceSchema>;
 
+/** Narrow companion to updateWorkspaceSchema — gated by ai:toggle, not
+ * workspace:update, so it's the one workspace field MEMBER may change. */
+export const updateAiSettingsSchema = z.object({
+  aiEnabled: z.boolean(),
+});
+export type UpdateAiSettingsBody = z.infer<typeof updateAiSettingsSchema>;
+
 /** OWNER is never an assignable target — ownership transfer is cut for v1. */
 export const updateMemberRoleSchema = z.object({
   role: z.enum(["ADMIN", "MEMBER"]),

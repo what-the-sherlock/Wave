@@ -158,3 +158,45 @@ export async function updateSettings(
 
   return updated;
 }
+
+/**
+ * Scoped to just aiEnabled, so the ai:toggle permission (MEMBER-accessible)
+ * can flip AI on/off without touching name, iconUrl, or allowPublicInvites.
+ * Can't delegate to updateSettings's RLS-scoped write: the ws_update RLS
+ * policy restricts UPDATE on `workspaces` to OWNER/ADMIN unconditionally,
+ * regardless of the app-level permission table, so a MEMBER's write would
+ * silently affect zero rows. Membership is instead confirmed via the
+ * normal RLS-scoped read (getByIdForUser), then the write itself goes
+ * through service-role — the same narrow-bypass shape already used below
+ * for embeddings cleanup, and for the member_count increment on invite
+ * accept.
+ */
+export async function updateAiEnabled(
+  userId: string,
+  workspaceId: string,
+  aiEnabled: boolean,
+): Promise<Workspace> {
+  const membership = await getByIdForUser(userId, workspaceId);
+  if (!membership) {
+    throw new NotFoundError("Workspace not found");
+  }
+
+  const { updated, aiJustDisabled } = await withServiceRoleScope(async (tx) => {
+    const updatedRow = await workspaceRepo.update(tx, workspaceId, {
+      settings: { ...membership.workspace.settings, aiEnabled },
+    });
+    if (!updatedRow) {
+      throw new NotFoundError("Workspace not found");
+    }
+    return {
+      updated: updatedRow,
+      aiJustDisabled: membership.workspace.settings.aiEnabled && !updatedRow.settings.aiEnabled,
+    };
+  });
+
+  if (aiJustDisabled) {
+    await withServiceRoleScope((tx) => embeddingRepo.deleteByWorkspace(tx, workspaceId));
+  }
+
+  return updated;
+}

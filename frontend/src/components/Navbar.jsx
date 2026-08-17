@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import { useSession } from "../hooks/useSession";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Search, Settings, User } from "lucide-react";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import NotificationBell from "./NotificationBell";
 import { WaveMark, WaveWordmark } from "./WaveLogo";
 
-const Navbar = () => {
+const Navbar = ({ onOpenSearch }) => {
   const { logout } = useAuthStore();
   const { data: session } = useSession();
 
@@ -28,6 +28,16 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            {session && (
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost btn-circle"
+                onClick={onOpenSearch}
+                title="Search (⌘K)"
+              >
+                <Search className="size-5" />
+              </button>
+            )}
             {session && <NotificationBell />}
             <Link
               to={"/settings"}

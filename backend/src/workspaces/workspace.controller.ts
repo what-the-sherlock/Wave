@@ -3,7 +3,7 @@ import { asyncHandler } from "../errors/asyncHandler.js";
 import { NotFoundError } from "../errors/AppError.js";
 import * as workspaceService from "./workspace.service.js";
 import type { Workspace, WorkspaceRole } from "./workspace.service.js";
-import type { CreateWorkspaceBody, UpdateWorkspaceBody } from "./workspace.schemas.js";
+import type { CreateWorkspaceBody, UpdateWorkspaceBody, UpdateAiSettingsBody } from "./workspace.schemas.js";
 
 function toDto(workspace: Workspace, role: WorkspaceRole) {
   return {
@@ -45,5 +45,11 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
 export const update = asyncHandler(async (req: Request, res: Response) => {
   const patch = req.body as UpdateWorkspaceBody;
   const workspace = await workspaceService.updateSettings(req.claims!.sub, req.workspace!.id, patch);
+  res.status(200).json(toDto(workspace, req.workspace!.role));
+});
+
+export const updateAiSettings = asyncHandler(async (req: Request, res: Response) => {
+  const { aiEnabled } = req.body as UpdateAiSettingsBody;
+  const workspace = await workspaceService.updateAiEnabled(req.claims!.sub, req.workspace!.id, aiEnabled);
   res.status(200).json(toDto(workspace, req.workspace!.role));
 });

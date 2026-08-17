@@ -15,6 +15,7 @@ import { askQuestionSchema } from "../ai/ai.schemas.js";
 import {
   createWorkspaceSchema,
   updateWorkspaceSchema,
+  updateAiSettingsSchema,
   updateMemberRoleSchema,
   createInviteSchema,
 } from "./workspace.schemas.js";
@@ -50,6 +51,17 @@ workspaceRouter.patch(
   authorize("workspace:update"),
   validate({ body: updateWorkspaceSchema }),
   workspaceController.update,
+);
+
+// MEMBER-accessible companion to PATCH /:workspaceId — ai:toggle covers
+// only settings.aiEnabled, never name/iconUrl/allowPublicInvites, which
+// stay behind workspace:update. Same carve-out pattern as ai:query.
+workspaceRouter.patch(
+  "/:workspaceId/ai-settings",
+  resolveWorkspace,
+  authorize("ai:toggle"),
+  validate({ body: updateAiSettingsSchema }),
+  workspaceController.updateAiSettings,
 );
 
 workspaceRouter.get(

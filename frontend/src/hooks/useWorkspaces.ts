@@ -80,6 +80,31 @@ export function useUpdateWorkspace() {
   });
 }
 
+export type UpdateAiEnabledInput = {
+  workspaceId: string;
+  slug: string;
+  aiEnabled: boolean;
+};
+
+/** MEMBER-accessible companion to useUpdateWorkspace — hits the narrower
+ * ai-settings endpoint, which only the aiEnabled field can go through. */
+export function useUpdateAiEnabled() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ workspaceId, aiEnabled }: UpdateAiEnabledInput) => {
+      const res = await axiosInstance.patch<Workspace>(`/workspaces/${workspaceId}/ai-settings`, {
+        aiEnabled,
+      });
+      return res.data;
+    },
+    onSuccess: (workspace, variables) => {
+      queryClient.setQueryData(["workspace", variables.slug], workspace);
+      void queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+    },
+    onError: (error) => toast.error(extractErrorMessage(error)),
+  });
+}
+
 async function fetchMembers(workspaceId: string): Promise<WorkspaceMember[]> {
   const res = await axiosInstance.get<WorkspaceMember[]>(`/workspaces/${workspaceId}/members`);
   return res.data;
